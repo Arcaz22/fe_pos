@@ -25,15 +25,16 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        // Status colors — dipakai StatusBadge & PaymentBadge
         status: {
-          pending: "hsl(38 92% 50%)",
-          progress: "hsl(217 91% 60%)",
-          ready: "hsl(142 71% 45%)",
-          completed: "hsl(222 15% 35%)",
-          cancelled: "hsl(0 72% 51%)",
-          failed: "hsl(0 72% 51%)",
-          expired: "hsl(220 9% 55%)",
-          refunded: "hsl(271 60% 55%)",
+          pending: "hsl(38 92% 50%)", // amber
+          progress: "hsl(217 91% 60%)", // blue
+          ready: "hsl(142 71% 45%)", // green
+          completed: "hsl(222 15% 35%)", // neutral dark
+          cancelled: "hsl(0 72% 51%)", // red
+          failed: "hsl(0 72% 51%)", // red
+          expired: "hsl(220 9% 55%)", // gray
+          refunded: "hsl(271 60% 55%)", // purple
         },
       },
       borderRadius: {
