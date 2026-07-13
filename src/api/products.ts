@@ -1,9 +1,13 @@
 import { apiClient } from "@/lib/api-client";
 import type { Product, ProductListParams, ProductPayload } from "@/types/product";
+import type { PaginatedResult } from "@/types/common";
 
 export const productsApi = {
-  list: (params?: ProductListParams) =>
-    apiClient.get<Product[]>("/products", { params }).then((r) => r.data),
+  list: (params?: ProductListParams): Promise<PaginatedResult<Product>> =>
+    apiClient.get<Product[]>("/products", { params }).then((r) => ({
+      items: r.data,
+      total: (r.meta?.total as number | undefined) ?? r.data.length,
+    })),
 
   detail: (id: number) => apiClient.get<Product>(`/products/${id}`).then((r) => r.data),
 

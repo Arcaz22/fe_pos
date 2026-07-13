@@ -1,13 +1,18 @@
 import { toast as sonnerToast } from "sonner";
 import { AxiosError } from "axios";
 
+interface BackendErrorBody {
+  message?: string;
+  errors?: Array<{ field?: string | null; detail: string }>;
+}
+
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
-    const detail = error.response?.data?.detail ?? error.response?.data?.message;
-    if (typeof detail === "string") return detail;
-    if (error.response?.status === 401) return "Sesi berakhir, silakan login kembali.";
-    if (error.response?.status === 403) return "Kamu tidak punya akses untuk aksi ini.";
-    if (error.response?.status === 404) return "Data tidak ditemukan.";
+    const body = error.response?.data as BackendErrorBody | undefined;
+    // Backend selalu balas error sebagai { message, errors: [{ field, detail }] }
+    const firstDetail = body?.errors?.[0]?.detail;
+    if (firstDetail) return firstDetail;
+    if (body?.message) return body.message;
   }
   return fallback;
 }

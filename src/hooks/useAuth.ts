@@ -24,11 +24,10 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
-    onSuccess: async (data) => {
-      setTokens(data.access_token, data.refresh_token);
-      const me = await authApi.me();
-      setUser(me);
-      toast.success(`Selamat datang, ${me.email}`);
+    onSuccess: (data) => {
+      setTokens(data.tokens.access_token, data.tokens.refresh_token);
+      setUser(data.user);
+      toast.success(`Selamat datang, ${data.user.email}`);
       navigate("/", { replace: true });
     },
     onError: (error) => {

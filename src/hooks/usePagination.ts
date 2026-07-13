@@ -15,8 +15,8 @@ export function usePagination({ initialLimit = 20 }: UsePaginationOptions = {}) 
     nextPage: () => setOffset((prev) => prev + limit),
     prevPage: () => setOffset((prev) => Math.max(0, prev - limit)),
     reset: () => setOffset(0),
-    // dipakai DataTable untuk disable tombol "next" saat hasil < limit (halaman terakhir)
-    hasNextPage: (resultCount: number) => resultCount === limit,
+    hasNextPage: (total: number) => offset + limit < total,
     hasPrevPage: offset > 0,
+    totalPages: (total: number) => Math.max(1, Math.ceil(total / limit)),
   };
 }

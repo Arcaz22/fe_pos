@@ -19,7 +19,8 @@ const STAT_CARDS = [
 export default function DashboardPage() {
   const navigate = useNavigate();
   // Ambil semua order aktif (belum selesai/batal) untuk dashboard operasional
-  const { data: orders, isLoading } = useOrders({ limit: 100 });
+  const { data, isLoading } = useOrders({ limit: 100 });
+  const orders = data?.items;
 
   const activeOrders = useMemo(
     () => (orders ?? []).filter((o) => o.status !== "completed" && o.status !== "cancelled"),

@@ -7,9 +7,14 @@ import type {
   PaymentStatus,
   UpdateOrderPayload,
 } from "@/types/order";
+import type { PaginatedResult } from "@/types/common";
 
 export const ordersApi = {
-  list: (params?: OrderListParams) => apiClient.get<Order[]>("/orders", { params }).then((r) => r.data),
+  list: (params?: OrderListParams): Promise<PaginatedResult<Order>> =>
+    apiClient.get<Order[]>("/orders", { params }).then((r) => ({
+      items: r.data,
+      total: (r.meta?.total as number | undefined) ?? r.data.length,
+    })),
 
   detail: (id: number) => apiClient.get<Order>(`/orders/${id}`).then((r) => r.data),
 

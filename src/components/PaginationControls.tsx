@@ -2,17 +2,34 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PaginationControlsProps {
-  page: number;
+  offset: number;
+  limit: number;
+  total: number;
+  currentCount: number;
   hasPrevPage: boolean;
   hasNextPage: boolean;
   onPrev: () => void;
   onNext: () => void;
 }
 
-export function PaginationControls({ page, hasPrevPage, hasNextPage, onPrev, onNext }: PaginationControlsProps) {
+export function PaginationControls({
+  offset,
+  limit,
+  total,
+  currentCount,
+  hasPrevPage,
+  hasNextPage,
+  onPrev,
+  onNext,
+}: PaginationControlsProps) {
+  const from = total === 0 ? 0 : offset + 1;
+  const to = offset + currentCount;
+
   return (
     <div className="flex items-center justify-between pt-3">
-      <span className="text-sm text-muted-foreground">Halaman {page}</span>
+      <span className="text-sm text-muted-foreground">
+        Menampilkan {from}–{to} dari {total} data
+      </span>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={onPrev} disabled={!hasPrevPage}>
           <ChevronLeft className="h-4 w-4" /> Sebelumnya

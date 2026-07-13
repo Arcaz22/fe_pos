@@ -1,7 +1,16 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/lib/env";
 import { useAuthStore } from "@/store/auth-store";
-import type { TokenPair } from "@/types/auth";
+import type { AuthResult } from "@/types/auth";
+
+// Backend selalu membungkus response sukses sebagai { message, data, meta? }.
+// Kita augment AxiosResponse supaya `meta` (info pagination: total, offset, limit)
+// tetap bisa diakses setelah response.data di-unwrap jadi payload aslinya.
+declare module "axios" {
+  interface AxiosResponse {
+    meta?: Record<string, unknown>;
+  }
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -15,6 +24,17 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+});
+
+// Response interceptor (sukses): unwrap envelope { message, data, meta } -> response.data = data,
+// dan simpan meta di response.meta biar hooks yang butuh `total` masih bisa akses.
+apiClient.interceptors.response.use((response) => {
+  const payload = response.data;
+  if (payload && typeof payload === "object" && "data" in payload) {
+    response.meta = payload.meta;
+    response.data = payload.data;
+  }
+  return response;
 });
 
 // --- Refresh token queue ---
@@ -68,14 +88,18 @@ apiClient.interceptors.response.use(
     }
 
     try {
-      const { data } = await axios.post<TokenPair>(`${API_BASE_URL}/auth/refresh`, {
+      // Panggil pakai axios polos (bukan apiClient) supaya tidak lewat interceptor
+      // request (yang nempelin access token lama) dan tidak trigger loop.
+      // Body respons masih envelope penuh: { message, data: { user, tokens } }.
+      const { data: envelope } = await axios.post<{ data: AuthResult }>(`${API_BASE_URL}/auth/refresh`, {
         refresh_token: refreshToken,
       });
+      const { tokens } = envelope.data;
 
-      useAuthStore.getState().setTokens(data.access_token, data.refresh_token);
-      processQueue(null, data.access_token);
+      useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
+      processQueue(null, tokens.access_token);
 
-      originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+      originalRequest.headers.Authorization = `Bearer ${tokens.access_token}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
