@@ -10,6 +10,7 @@ export function useCart() {
   const setQuantity = useCartStore((s) => s.setQuantity);
   const setNotes = useCartStore((s) => s.setNotes);
   const removeItem = useCartStore((s) => s.removeItem);
+  const loadItems = useCartStore((s) => s.loadItems);
   const clear = useCartStore((s) => s.clear);
 
   const subtotal = useMemo(
@@ -33,6 +34,7 @@ export function useCart() {
     setQuantity,
     setNotes,
     removeItem,
+    loadItems,
     clear,
     toPayloadItems,
   };

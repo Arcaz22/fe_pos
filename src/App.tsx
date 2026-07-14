@@ -7,13 +7,15 @@ import { AppShell } from "@/layouts/AppShell";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import ProductsPage from "@/pages/ProductsPage";
+import OrdersPage from "@/pages/OrdersPage";
+import CreateOrderPage from "@/pages/CreateOrderPage";
+import OrderDetailPage from "@/pages/OrderDetailPage";
+import OrderEditPage from "@/pages/OrderEditPage";
+import ProfilePage from "./pages/ProfilePage";
 
-// NOTE: Halaman Products & Orders (list/create/detail/edit) ditambahkan di Tahap 4.
-// Route-nya sudah disiapkan di sini sebagai placeholder supaya nav sidebar
-// (lihat layouts/AppShell.tsx) sudah bisa diklik tanpa error 404.
-function ComingSoon({ label }: { label: string }) {
-  return <div className="text-sm text-muted-foreground">Halaman {label} — menyusul di Tahap 4.</div>;
-}
+// function ComingSoon({ label }: { label: string }) {
+//   return <div className="text-sm text-muted-foreground">Halaman {label} — menyusul.</div>;
+// }
 
 export default function App() {
   return (
@@ -43,7 +45,15 @@ export default function App() {
               path="/orders"
               element={
                 <AppShell>
-                  <ComingSoon label="Order" />
+                  <OrdersPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/orders/new"
+              element={
+                <AppShell>
+                  <CreateOrderPage />
                 </AppShell>
               }
             />
@@ -51,7 +61,15 @@ export default function App() {
               path="/orders/:id"
               element={
                 <AppShell>
-                  <ComingSoon label="Detail Order" />
+                  <OrderDetailPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/orders/:id/edit"
+              element={
+                <AppShell>
+                  <OrderEditPage />
                 </AppShell>
               }
             />
@@ -59,7 +77,7 @@ export default function App() {
               path="/profile"
               element={
                 <AppShell>
-                  <ComingSoon label="Profil" />
+                  <ProfilePage />
                 </AppShell>
               }
             />

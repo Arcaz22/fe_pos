@@ -16,6 +16,7 @@ interface CartState {
   setQuantity: (productId: number, quantity: number) => void;
   setNotes: (productId: number, notes: string) => void;
   removeItem: (productId: number) => void;
+  loadItems: (items: CartItem[]) => void;
   clear: () => void;
 }
 
@@ -67,6 +68,10 @@ export const useCartStore = create<CartState>((set) => ({
 
   removeItem: (productId) =>
     set((state) => ({ items: state.items.filter((i) => i.product_id !== productId) })),
+
+  // Ganti seluruh isi cart sekaligus — dipakai saat masuk halaman Edit Order
+  // untuk preload item yang sudah ada di order.
+  loadItems: (items) => set({ items }),
 
   clear: () => set({ items: [] }),
 }));
