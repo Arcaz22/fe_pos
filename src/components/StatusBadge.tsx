@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { OrderStatus } from "@/types/order";
+import type { CSSProperties } from "react";
 
 // Simpan komponen HSL mentah (tanpa wrapper hsl()) biar gampang bikin versi solid & versi transparan
 const STATUS_CONFIG: Record<OrderStatus, { label: string; hsl: string }> = {
@@ -14,8 +15,14 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
   const config = STATUS_CONFIG[status];
   return (
     <Badge
-      dotColor={`hsl(${config.hsl})`}
-      style={{ backgroundColor: `hsl(${config.hsl} / 0.12)`, color: `hsl(${config.hsl})` }}
+      className="before:size-1.5 before:rounded-full before:bg-[var(--badge-dot-color)] before:content-['']"
+      style={
+        {
+          "--badge-dot-color": `hsl(${config.hsl})`,
+          backgroundColor: `hsl(${config.hsl} / 0.12)`,
+          color: `hsl(${config.hsl})`,
+        } as CSSProperties
+      }
     >
       {config.label}
     </Badge>

@@ -4,7 +4,7 @@ import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "@/lib/toast";
 import { useAuthStore } from "@/store/auth-store";
-import type { LoginPayload } from "@/types/auth";
+import type { LoginPayload, RegisterPayload } from "@/types/auth";
 
 /** Ambil profil user yang sedang login. Hanya jalan kalau sudah ada access token. */
 export function useCurrentUser() {
@@ -49,4 +49,14 @@ export function useLogout() {
     queryClient.clear();
     navigate("/login", { replace: true });
   };
+}
+
+export function useCreateCashier() {
+  return useMutation({
+    mutationFn: (payload: RegisterPayload) => authApi.register(payload),
+    onSuccess: (result) => {
+      toast.success(`Akun ${result.user.email} berhasil dibuat.`);
+    },
+    onError: (error) => toast.error(error, "Gagal membuat akun baru."),
+  });
 }

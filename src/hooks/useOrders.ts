@@ -74,7 +74,8 @@ export function useUpdateOrderStatus(id: number) {
 export function useUpdatePaymentStatus(id: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payment_status: PaymentStatus) => ordersApi.updatePaymentStatus(id, payment_status),
+    mutationFn: ({ payment_status, cash_received }: { payment_status: PaymentStatus; cash_received?: number }) =>
+      ordersApi.updatePaymentStatus(id, payment_status, cash_received),
     onSuccess: (order) => {
       invalidateOrderQueries(queryClient, id);
       toast.success(`Status pembayaran diubah ke "${order.payment_status}".`);

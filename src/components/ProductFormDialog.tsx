@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
-import { productSchema, type ProductFormValues } from "@/schemas/product-schema";
+import { productSchema, type ProductFormInput, type ProductFormValues } from "@/schemas/product-schema";
 import type { Product } from "@/types/product";
 
 interface ProductFormDialogProps {
@@ -33,9 +33,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ProductFormValues>({
+  } = useForm<ProductFormInput, unknown, ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: 0 },
+    defaultValues: { name: "", description: "", category: "", price: 0 },
   });
 
   // Reset form setiap kali dialog dibuka, isi dari data product kalau mode edit
@@ -44,6 +44,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       reset({
         name: product?.name ?? "",
         description: product?.description ?? "",
+        category: product?.category ?? "",
         price: product ? parseFloat(product.price) : 0,
       });
     }
@@ -51,7 +52,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
 
   const onSubmit = (values: ProductFormValues) => {
     mutation.mutate(
-      { name: values.name, description: values.description || null, price: values.price },
+      { name: values.name, description: values.description || null, category: values.category || null, price: values.price },
       { onSuccess: () => onOpenChange(false) }
     );
   };
@@ -71,6 +72,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
           <div className="space-y-1.5">
             <Label htmlFor="description">Deskripsi (opsional)</Label>
             <Textarea id="description" placeholder="Deskripsi singkat produk..." {...register("description")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="category">Kategori (opsional)</Label>
+            <Input id="category" placeholder="Makanan, Minuman, Snack, dll" {...register("category")} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="price">Harga (Rp)</Label>

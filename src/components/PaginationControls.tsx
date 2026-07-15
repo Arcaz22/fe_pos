@@ -14,7 +14,6 @@ interface PaginationControlsProps {
 
 export function PaginationControls({
   offset,
-  limit,
   total,
   currentCount,
   hasPrevPage,

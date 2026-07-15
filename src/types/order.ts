@@ -26,6 +26,8 @@ export interface Order {
   payment_status: PaymentStatus;
   subtotal: string;
   total_amount: string;
+  cash_received: string | null;
+  change_amount: string | null;
   notes: string | null;
   items: OrderItem[];
   created_at: string;

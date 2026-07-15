@@ -1,21 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
 import { ProductPicker } from "@/components/ProductPicker";
 import { CartPanel } from "@/components/CartPanel";
+import { CashPaymentDialog } from "@/components/CashPaymentDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { ordersApi } from "@/api/orders";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 import { useCart } from "@/hooks/useCart";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { createOrderSchema, type CreateOrderFormValues } from "@/schemas/order-schema";
 import { toast } from "@/lib/toast";
+import type { CreateOrderPayload } from "@/types/order";
 
 // Segmented toggle sederhana untuk pilihan 2 opsi (order_type, payment_method)
 function SegmentedField<T extends string>({
@@ -50,8 +55,27 @@ function SegmentedField<T extends string>({
 
 export default function CreateOrderPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const cart = useCart();
   const createOrder = useCreateOrder();
+  const [cashDialogOpen, setCashDialogOpen] = useState(false);
+  const [pendingCashPayload, setPendingCashPayload] = useState<CreateOrderPayload | null>(null);
+
+  const createPaidCashOrder = useMutation({
+    mutationFn: async ({ payload, cashReceived }: { payload: CreateOrderPayload; cashReceived: number }) => {
+      const order = await ordersApi.create(payload);
+      return ordersApi.updatePaymentStatus(order.id, "paid", cashReceived);
+    },
+    onSuccess: (order) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      cart.clear();
+      setPendingCashPayload(null);
+      setCashDialogOpen(false);
+      toast.success(`Order ${order.order_number} berhasil dibuat dan dibayar tunai.`);
+      navigate(`/orders/${order.id}`);
+    },
+    onError: (error) => toast.error(error, "Gagal membuat order tunai."),
+  });
 
   const {
     register,
@@ -77,23 +101,31 @@ export default function CreateOrderPage() {
       toast.info("Tambahkan minimal 1 produk ke keranjang dulu.");
       return;
     }
-    createOrder.mutate(
-      {
-        customer_name: values.customer_name || null,
-        order_type: values.order_type,
-        table_number: values.order_type === "dine_in" ? values.table_number || null : null,
-        payment_method: values.payment_method,
-        notes: values.notes || null,
-        items: cart.toPayloadItems(),
+
+    const payload: CreateOrderPayload = {
+      customer_name: values.customer_name || null,
+      order_type: values.order_type,
+      table_number: values.order_type === "dine_in" ? values.table_number || null : null,
+      payment_method: values.payment_method,
+      notes: values.notes || null,
+      items: cart.toPayloadItems(),
+    };
+
+    if (values.payment_method === "cash") {
+      setPendingCashPayload(payload);
+      setCashDialogOpen(true);
+      return;
+    }
+
+    createOrder.mutate(payload, {
+      onSuccess: (order) => {
+        cart.clear();
+        navigate(`/orders/${order.id}`);
       },
-      {
-        onSuccess: (order) => {
-          cart.clear();
-          navigate(`/orders/${order.id}`);
-        },
-      }
-    );
+    });
   };
+
+  const isSubmitting = createOrder.isPending || createPaidCashOrder.isPending;
 
   return (
     <div className="space-y-4">
@@ -195,14 +227,28 @@ export default function CreateOrderPage() {
                   <Textarea id="notes" placeholder="Contoh: tidak pedas, es dipisah, dll" {...register("notes")} />
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={createOrder.isPending || cart.isEmpty}>
-                  {createOrder.isPending ? "Membuat Order..." : `Buat Order · ${formatCurrency(cart.subtotal)}`}
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || cart.isEmpty}>
+                  {isSubmitting ? "Membuat Order..." : `Buat Order · ${formatCurrency(cart.subtotal)}`}
                 </Button>
               </form>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <CashPaymentDialog
+        open={cashDialogOpen}
+        onOpenChange={(open) => {
+          setCashDialogOpen(open);
+          if (!open) setPendingCashPayload(null);
+        }}
+        totalAmount={cart.subtotal}
+        isLoading={createPaidCashOrder.isPending}
+        onConfirm={(cashReceived) => {
+          if (!pendingCashPayload) return;
+          createPaidCashOrder.mutate({ payload: pendingCashPayload, cashReceived });
+        }}
+      />
     </div>
   );
 }

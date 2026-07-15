@@ -45,6 +45,7 @@ export default function ProductsPage() {
 
   const columns: DataTableColumn<Product>[] = [
     { key: "name", header: "Nama Produk", render: (p) => <span className="font-medium">{p.name}</span> },
+    { key: "category", header: "Kategori", render: (p) => <span>{p.category || "-"}</span> },
     {
       key: "description",
       header: "Deskripsi",

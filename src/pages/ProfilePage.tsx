@@ -1,9 +1,12 @@
-import { UserCircle, Mail, Shield, CalendarClock } from "lucide-react";
+import { useState } from "react";
+import { UserCircle, Mail, Shield, CalendarClock, UserPlus } from "lucide-react";
 import { useCurrentUser, useLogout } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CardSkeleton } from "@/components/LoadingSkeleton";
 import { Badge } from "@/components/ui/badge";
+import { RoleGuard } from "@/components/RoleGuard";
+import { AddCashierDialog } from "@/components/AddcashierDialog";
 import { formatDateTime } from "@/lib/format";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -14,6 +17,7 @@ const ROLE_LABEL: Record<string, string> = {
 export default function ProfilePage() {
   const { data: user, isLoading } = useCurrentUser();
   const logout = useLogout();
+  const [addUserOpen, setAddUserOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -63,9 +67,27 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      <RoleGuard allow={["admin"]}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">Kelola Akun</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Tambahkan akun kasir atau admin baru untuk tim kamu.
+            </p>
+            <Button variant="outline" className="w-full" onClick={() => setAddUserOpen(true)}>
+              <UserPlus className="h-4 w-4" /> Tambah Akun
+            </Button>
+          </CardContent>
+        </Card>
+      </RoleGuard>
+
       <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10" onClick={logout}>
         Keluar
       </Button>
+
+      <AddCashierDialog open={addUserOpen} onOpenChange={setAddUserOpen} />
     </div>
   );
 }

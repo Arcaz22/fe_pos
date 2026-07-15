@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/StatusBadge";
 import { PaymentBadge } from "@/components/PaymentBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CashPaymentDialog } from "@/components/CashPaymentDialog";
 import { CardSkeleton } from "@/components/LoadingSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency, formatDateTime } from "@/lib/format";
@@ -34,6 +35,7 @@ export default function OrderDetailPage() {
   const cancelOrder = useCancelOrder(orderId);
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cashDialogOpen, setCashDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -179,7 +181,16 @@ export default function OrderDetailPage() {
               <PaymentBadge status={order.payment_status} />
               <Select
                 value={order.payment_status}
-                onValueChange={(v) => updatePaymentStatus.mutate(v as PaymentStatus)}
+                onValueChange={(v) => {
+                  // Order cash yang mau ditandai "paid" wajib lewat kalkulator kembalian dulu,
+                  // supaya cash_received tercatat di backend. Selain itu (gateway, atau status
+                  // lain) langsung update tanpa dialog tambahan.
+                  if (v === "paid" && order.payment_method === "cash") {
+                    setCashDialogOpen(true);
+                    return;
+                  }
+                  updatePaymentStatus.mutate({ payment_status: v as PaymentStatus });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -192,10 +203,36 @@ export default function OrderDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {order.payment_method === "cash" && order.cash_received != null && (
+                <div className="space-y-1.5 border-t border-border pt-3 text-sm">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Uang Diterima</span>
+                    <span className="font-medium text-foreground">{formatCurrency(order.cash_received)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Kembalian</span>
+                    <span className="font-medium text-foreground">{formatCurrency(order.change_amount ?? "0")}</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <CashPaymentDialog
+        open={cashDialogOpen}
+        onOpenChange={setCashDialogOpen}
+        totalAmount={parseFloat(order.total_amount)}
+        isLoading={updatePaymentStatus.isPending}
+        onConfirm={(cashReceived) =>
+          updatePaymentStatus.mutate(
+            { payment_status: "paid", cash_received: cashReceived },
+            { onSuccess: () => setCashDialogOpen(false) }
+          )
+        }
+      />
 
       <ConfirmDialog
         open={cancelDialogOpen}

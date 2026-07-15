@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { PaymentStatus } from "@/types/order";
+import type { CSSProperties } from "react";
 
 const PAYMENT_CONFIG: Record<PaymentStatus, { label: string; hsl: string }> = {
   pending: { label: "Menunggu Bayar", hsl: "38 92% 50%" },
@@ -13,8 +14,14 @@ export function PaymentBadge({ status }: { status: PaymentStatus }) {
   const config = PAYMENT_CONFIG[status];
   return (
     <Badge
-      dotColor={`hsl(${config.hsl})`}
-      style={{ backgroundColor: `hsl(${config.hsl} / 0.12)`, color: `hsl(${config.hsl})` }}
+      className="before:size-1.5 before:rounded-full before:bg-[var(--badge-dot-color)] before:content-['']"
+      style={
+        {
+          "--badge-dot-color": `hsl(${config.hsl})`,
+          backgroundColor: `hsl(${config.hsl} / 0.12)`,
+          color: `hsl(${config.hsl})`,
+        } as CSSProperties
+      }
     >
       {config.label}
     </Badge>

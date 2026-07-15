@@ -27,8 +27,10 @@ export const ordersApi = {
   updateStatus: (id: number, status: OrderStatus) =>
     apiClient.patch<Order>(`/orders/${id}/status`, { status }).then((r) => r.data),
 
-  updatePaymentStatus: (id: number, payment_status: PaymentStatus) =>
-    apiClient.patch<Order>(`/orders/${id}/payment-status`, { payment_status }).then((r) => r.data),
+  updatePaymentStatus: (id: number, payment_status: PaymentStatus, cash_received?: number) =>
+    apiClient
+      .patch<Order>(`/orders/${id}/payment-status`, { payment_status, cash_received })
+      .then((r) => r.data),
 
   cancel: (id: number) => apiClient.post<Order>(`/orders/${id}/cancel`).then((r) => r.data),
 };
