@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, LogOut, UserCircle, WalletCards } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/store/auth-store";
 import { useLogout } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/products", label: "Produk", icon: Package },
   { to: "/orders", label: "Order", icon: ClipboardList },
+  { to: "/cash-sessions", label: "Sesi Kas", icon: WalletCards },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

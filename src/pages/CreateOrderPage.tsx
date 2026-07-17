@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProductPicker } from "@/components/ProductPicker";
 import { CartPanel } from "@/components/CartPanel";
 import { CashPaymentDialog } from "@/components/CashPaymentDialog";
+import { OpenCashSessionDialog } from "@/components/OpenCashSessionDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { queryKeys } from "@/lib/query-keys";
 import { useCart } from "@/hooks/useCart";
+import { useCurrentCashSession } from "@/hooks/useCashSession";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { createOrderSchema, type CreateOrderFormValues } from "@/schemas/order-schema";
 import { toast } from "@/lib/toast";
@@ -27,10 +29,12 @@ function SegmentedField<T extends string>({
   value,
   onChange,
   options,
+  disabledValues = [],
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: string }[];
+  disabledValues?: T[];
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -38,12 +42,14 @@ function SegmentedField<T extends string>({
         <button
           key={opt.value}
           type="button"
-          onClick={() => onChange(opt.value)}
+          onClick={() => !disabledValues.includes(opt.value) && onChange(opt.value)}
+          disabled={disabledValues.includes(opt.value)}
           className={cn(
             "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
             value === opt.value
               ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground hover:bg-muted"
+              : "border-border bg-background text-muted-foreground hover:bg-muted",
+            disabledValues.includes(opt.value) && "cursor-not-allowed opacity-50 hover:bg-background"
           )}
         >
           {opt.label}
@@ -58,7 +64,9 @@ export default function CreateOrderPage() {
   const queryClient = useQueryClient();
   const cart = useCart();
   const createOrder = useCreateOrder();
+  const currentCashSession = useCurrentCashSession();
   const [cashDialogOpen, setCashDialogOpen] = useState(false);
+  const [openSessionDialogOpen, setOpenSessionDialogOpen] = useState(false);
   const [pendingCashPayload, setPendingCashPayload] = useState<CreateOrderPayload | null>(null);
 
   const createPaidCashOrder = useMutation({
@@ -68,6 +76,8 @@ export default function CreateOrderPage() {
     },
     onSuccess: (order) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cashSessions.current });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cashSessions.all });
       cart.clear();
       setPendingCashPayload(null);
       setCashDialogOpen(false);
@@ -112,6 +122,12 @@ export default function CreateOrderPage() {
     };
 
     if (values.payment_method === "cash") {
+      if (!currentCashSession.data) {
+        setPendingCashPayload(payload);
+        setOpenSessionDialogOpen(true);
+        toast.info("Buka sesi kas dulu sebelum menerima pembayaran tunai.");
+        return;
+      }
       setPendingCashPayload(payload);
       setCashDialogOpen(true);
       return;
@@ -217,9 +233,11 @@ export default function CreateOrderPage() {
                           { value: "cash", label: "Tunai" },
                           { value: "gateway", label: "Gateway" },
                         ]}
+                        disabledValues={["gateway"]}
                       />
                     )}
                   />
+                  <p className="text-xs text-muted-foreground">Payment gateway belum tersedia.</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -227,7 +245,12 @@ export default function CreateOrderPage() {
                   <Textarea id="notes" placeholder="Contoh: tidak pedas, es dipisah, dll" {...register("notes")} />
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || cart.isEmpty}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={isSubmitting || cart.isEmpty || currentCashSession.isLoading}
+                >
                   {isSubmitting ? "Membuat Order..." : `Buat Order · ${formatCurrency(cart.subtotal)}`}
                 </Button>
               </form>
@@ -247,6 +270,13 @@ export default function CreateOrderPage() {
         onConfirm={(cashReceived) => {
           if (!pendingCashPayload) return;
           createPaidCashOrder.mutate({ payload: pendingCashPayload, cashReceived });
+        }}
+      />
+      <OpenCashSessionDialog
+        open={openSessionDialogOpen}
+        onOpenChange={(open) => {
+          setOpenSessionDialogOpen(open);
+          if (!open) setPendingCashPayload(null);
         }}
       />
     </div>

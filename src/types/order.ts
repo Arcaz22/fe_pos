@@ -28,6 +28,7 @@ export interface Order {
   total_amount: string;
   cash_received: string | null;
   change_amount: string | null;
+  cash_session_id: number | null;
   notes: string | null;
   items: OrderItem[];
   created_at: string;
@@ -60,9 +61,9 @@ export interface CreateOrderPayload {
   items: OrderItemPayload[];
 }
 
-export type UpdateOrderPayload = Partial<
-  Pick<CreateOrderPayload, "customer_name" | "order_type" | "table_number" | "notes" | "items">
->;
+// OrderUpdateRequest di backend = OrderCreateRequest (inherit semua field, termasuk
+// payment_method sebagai required) — jadi shape-nya identik, bukan Partial.
+export type UpdateOrderPayload = CreateOrderPayload;
 
 // Transisi status valid — dipakai lib/status-transitions.ts di Tahap 3
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {

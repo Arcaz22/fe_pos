@@ -12,6 +12,7 @@ import CreateOrderPage from "@/pages/CreateOrderPage";
 import OrderDetailPage from "@/pages/OrderDetailPage";
 import OrderEditPage from "@/pages/OrderEditPage";
 import ProfilePage from "./pages/ProfilePage";
+import CashSessionsPage from "@/pages/CashSessionsPage";
 
 // function ComingSoon({ label }: { label: string }) {
 //   return <div className="text-sm text-muted-foreground">Halaman {label} — menyusul.</div>;
@@ -70,6 +71,14 @@ export default function App() {
               element={
                 <AppShell>
                   <OrderEditPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/cash-sessions"
+              element={
+                <AppShell>
+                  <CashSessionsPage />
                 </AppShell>
               }
             />

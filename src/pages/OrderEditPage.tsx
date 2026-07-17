@@ -24,28 +24,37 @@ function SegmentedField<T extends string>({
   value,
   onChange,
   options,
+  disabled,
+  disabledValues = [],
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: string }[];
+  disabled?: boolean;
+  disabledValues?: T[];
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
-            value === opt.value
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground hover:bg-muted"
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
+      {options.map((opt) => {
+        const isDisabled = disabled || disabledValues.includes(opt.value);
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => !isDisabled && onChange(opt.value)}
+            disabled={isDisabled}
+            className={cn(
+              "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+              value === opt.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:bg-muted",
+              isDisabled && "cursor-not-allowed opacity-50 hover:bg-background"
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -67,10 +76,11 @@ export default function OrderEditPage() {
     formState: { errors },
   } = useForm<EditOrderFormValues>({
     resolver: zodResolver(editOrderSchema),
-    defaultValues: { customer_name: "", order_type: "dine_in", table_number: "", notes: "" },
+    defaultValues: { customer_name: "", order_type: "dine_in", table_number: "", payment_method: "cash", notes: "" },
   });
 
   const orderType = watch("order_type");
+  const isPaymentMethodLocked = order?.payment_status !== "pending";
 
   // Preload cart & form sekali saat data order pertama kali datang
   const hasPreloaded = useRef(false);
@@ -90,6 +100,7 @@ export default function OrderEditPage() {
         customer_name: order.customer_name ?? "",
         order_type: order.order_type,
         table_number: order.table_number ?? "",
+        payment_method: order.payment_method,
         notes: order.notes ?? "",
       });
     }
@@ -106,6 +117,7 @@ export default function OrderEditPage() {
         customer_name: values.customer_name || null,
         order_type: values.order_type,
         table_number: values.order_type === "dine_in" ? values.table_number || null : null,
+        payment_method: values.payment_method,
         notes: values.notes || null,
         items: cart.toPayloadItems(),
       },
@@ -218,13 +230,34 @@ export default function OrderEditPage() {
                 </div>
 
                 <div className="space-y-1.5">
+                  <Label>Metode Pembayaran</Label>
+                  <Controller
+                    control={control}
+                    name="payment_method"
+                    render={({ field }) => (
+                      <SegmentedField
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: "cash", label: "Tunai" },
+                          { value: "gateway", label: "Gateway" },
+                        ]}
+                        disabled={isPaymentMethodLocked}
+                        disabledValues={["gateway"]}
+                      />
+                    )}
+                  />
+                  {isPaymentMethodLocked ? (
+                    <p className="text-xs text-muted-foreground">Metode pembayaran tidak bisa diubah setelah pembayaran diproses.</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Payment gateway belum tersedia.</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
                   <Label htmlFor="notes">Catatan (opsional)</Label>
                   <Textarea id="notes" placeholder="Contoh: tidak pedas, es dipisah, dll" {...register("notes")} />
                 </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Metode pembayaran tidak bisa diubah di sini — ubah lewat panel Pembayaran di halaman detail order.
-                </p>
 
                 <Button type="submit" className="w-full" size="lg" disabled={updateOrder.isPending || cart.isEmpty}>
                   {updateOrder.isPending ? "Menyimpan..." : `Simpan Perubahan · ${formatCurrency(cart.subtotal)}`}

@@ -51,6 +51,9 @@ export default function OrderDetailPage() {
   }
 
   const nextActions = getNextStatusActions(order.status);
+  const isPaidCashOrder = order.payment_method === "cash" && order.payment_status === "paid";
+  const isGatewayOrder = order.payment_method === "gateway";
+  const isPaymentSelectDisabled = updatePaymentStatus.isPending || isPaidCashOrder || isGatewayOrder;
 
   return (
     <div className="space-y-4">
@@ -181,6 +184,7 @@ export default function OrderDetailPage() {
               <PaymentBadge status={order.payment_status} />
               <Select
                 value={order.payment_status}
+                disabled={isPaymentSelectDisabled}
                 onValueChange={(v) => {
                   // Order cash yang mau ditandai "paid" wajib lewat kalkulator kembalian dulu,
                   // supaya cash_received tercatat di backend. Selain itu (gateway, atau status
@@ -203,6 +207,12 @@ export default function OrderDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {isGatewayOrder && (
+                <p className="text-xs text-muted-foreground">Payment gateway belum tersedia.</p>
+              )}
+              {isPaidCashOrder && (
+                <p className="text-xs text-muted-foreground">Pembayaran tunai yang sudah lunas tidak bisa dibayar ulang.</p>
+              )}
 
               {order.payment_method === "cash" && order.cash_received != null && (
                 <div className="space-y-1.5 border-t border-border pt-3 text-sm">

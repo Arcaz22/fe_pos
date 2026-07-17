@@ -78,6 +78,8 @@ export function useUpdatePaymentStatus(id: number) {
       ordersApi.updatePaymentStatus(id, payment_status, cash_received),
     onSuccess: (order) => {
       invalidateOrderQueries(queryClient, id);
+      queryClient.invalidateQueries({ queryKey: queryKeys.cashSessions.current });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cashSessions.all });
       toast.success(`Status pembayaran diubah ke "${order.payment_status}".`);
     },
     onError: (error) => toast.error(error, "Gagal mengubah status pembayaran."),
